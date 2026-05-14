@@ -1,5 +1,6 @@
 FROM python:3.11-slim
 
+ENV PYTHONUNBUFFERED=1
 ENV DEBIAN_FRONTEND=noninteractive
 
 WORKDIR /app
