@@ -3,6 +3,7 @@ import time
 import os
 import zipfile
 import base64
+import shutil
 from typing import Callable, Any
 
 from utils.file_utils import ensure_directory_exists, get_file_path
@@ -20,7 +21,8 @@ class SunatPdfDownloader:
             args=[
                 '--disable-blink-features=AutomationControlled',
                 '--start-maximized', 
-                '--no-sandbox'
+                '--no-sandbox',
+                "--disable-dev-shm-usage"
             ]
         )
         context = browser.new_context(
@@ -444,6 +446,9 @@ class SunatPdfDownloader:
         target_pdf_path = get_file_path(pdf_dir, f"{nombre_base}.pdf")
         target_zip_path = get_file_path(zip_dir, f"{nombre_base}.zip")
 
+        target_xml_path = get_file_path(xml_dir, f"{nombre_base}.xml")
+        target_cdr_path = get_file_path(cdr_dir, f"R-{nombre_base}.xml")
+
         with sync_playwright() as p:
             browser, context, page = self._init_browser_session(p)
             try:
@@ -465,16 +470,60 @@ class SunatPdfDownloader:
                 cdr_file = None
 
                 for file in os.listdir(xml_dir):
-                    if file.endswith(".xml") and nombre_base in file:
-                        xml_file = os.path.join(xml_dir, file)
+                    if file.lower().endswith(".xml"):
+                        archivo_original = os.path.join(xml_dir, file)
+                        # Copiar con nombre estándar
+                        shutil.copy2(archivo_original, target_xml_path)
+                        xml_file = target_xml_path
                         break
 
                 for file in os.listdir(cdr_dir):
-                    if file.endswith(".xml") and nombre_base in file:
-                        cdr_file = os.path.join(cdr_dir, file)
+                    if file.lower().endswith(".xml"):
+                        archivo_original = os.path.join(cdr_dir, file)
+                        # Copiar con nombre estándar
+                        shutil.copy2(archivo_original, target_cdr_path)
+                        cdr_file = target_cdr_path
                         break
                 
                 callback_status(f"✓ ¡ÉXITO! Proceso completado.")
+                response_data = {
+                    "success": True,
+
+                    "pdf_path": self.file_to_base64_response(
+                        target_pdf_path,
+                        "application/pdf"
+                    ),
+
+                    "xml": self.file_to_base64_response(
+                        xml_file,
+                        "application/xml"
+                    ) if xml_file else None,
+
+                    "cdr": self.file_to_base64_response(
+                        cdr_file,
+                        "application/xml"
+                    ) if cdr_file else None
+                }
+
+                archivos_eliminar = [
+                    target_pdf_path,
+                    target_zip_path,
+                    xml_file,
+                    cdr_file
+                ]
+
+                for archivo in archivos_eliminar:
+                    try:
+                        if archivo and os.path.exists(archivo):
+                            os.remove(archivo)
+                    except Exception as e:
+                        print(f"Error eliminando archivo {archivo}: {e}")
+
+                callback_status("✓ ¡ÉXITO! Proceso completado.")
+
+                return response_data
+
+                
                 return {
                     "success": True,
                     "pdf_path": self.file_to_base64_response(
