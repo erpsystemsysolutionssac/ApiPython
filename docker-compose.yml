@@ -1,0 +1,10 @@
+version: '3'
+
+services:
+  api:
+    build: .
+    container_name: api_python
+    restart: always
+    ports:
+      - "8000:8000"
+    shm_size: "1gb"
