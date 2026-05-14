@@ -472,16 +472,20 @@ class SunatPdfDownloader:
                 for file in os.listdir(xml_dir):
                     if file.lower().endswith(".xml"):
                         archivo_original = os.path.join(xml_dir, file)
-                        # Copiar con nombre estándar
-                        shutil.copy2(archivo_original, target_xml_path)
+
+                        if os.path.abspath(archivo_original) != os.path.abspath(target_xml_path):
+                            shutil.copy2(archivo_original, target_xml_path)
+
                         xml_file = target_xml_path
                         break
 
                 for file in os.listdir(cdr_dir):
                     if file.lower().endswith(".xml"):
                         archivo_original = os.path.join(cdr_dir, file)
-                        # Copiar con nombre estándar
-                        shutil.copy2(archivo_original, target_cdr_path)
+
+                        if os.path.abspath(archivo_original) != os.path.abspath(target_cdr_path):
+                            shutil.copy2(archivo_original, target_cdr_path)
+                            
                         cdr_file = target_cdr_path
                         break
                 
